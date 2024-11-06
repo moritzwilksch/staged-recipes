@@ -1,0 +1,37 @@
+context: {}
+
+package:
+  name: nodejs-wheel
+  version: 23.1.0rc0
+
+source:
+- url: https://files.pythonhosted.org/packages/60/b1/543d839bf76320083c32dc62bd3aad2004b538c023187bd5b051e04a22f2/nodejs_wheel-23.1.0rc0.tar.gz
+  sha256: 53e50ecdebcb6c00b717af0d4dd2985f58f19a175d36142ec32c6a6109403b5d
+
+build:
+  script: python -m pip install .
+  python:
+    entry_points:
+    - node = nodejs_wheel.executable:_node_entry_point
+    - npm = nodejs_wheel.executable:_npm_entry_point
+    - npx = nodejs_wheel.executable:_npx_entry_point
+
+requirements:
+  host:
+  - hatchling
+  - hatch-vcs
+  - python >=3.7
+  - pip
+  run:
+  - python >=3.7
+  - nodejs-wheel-binaries ==23.1.0rc0
+
+tests:
+  - script:
+    - npm help
+
+about:
+  summary: unoffical Node.js package
+  license: MIT
+
+

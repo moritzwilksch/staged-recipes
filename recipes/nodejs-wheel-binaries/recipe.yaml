@@ -1,0 +1,33 @@
+context: {}
+
+package:
+  name: nodejs-wheel-binaries
+  version: 23.1.0rc0
+
+source:
+- url: https://files.pythonhosted.org/packages/f4/ce/bc275d09cfcf9ff5796fb33ec883ee8cc686b3b272a1b81b16020777a3ce/nodejs_wheel_binaries-23.1.0rc0.tar.gz
+  sha256: 62e9edfb0140df482d17c3b75854c254c55b458dfd41248f945c4d897fbd721d
+
+build:
+  script: python -m pip install .
+
+requirements:
+  host:
+  - scikit-build-core >=0.3.0
+  - python >=3.7
+  - pip
+  - setuptools_scm
+  run:
+  - python >=3.7
+
+tests:
+  - script:
+    - node --version
+    - npm --version
+    - npx --version
+
+about:
+  summary: unoffical Node.js package
+  license: MIT
+
+

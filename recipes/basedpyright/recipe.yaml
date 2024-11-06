@@ -1,0 +1,56 @@
+schema_version: 1
+
+context:
+  name: basedpyright
+  version: 1.21.0
+
+package:
+  name: ${{ name|lower }}
+  version: ${{ version }}
+
+source:
+  url: https://pypi.io/packages/source/${{ name[0] }}/${{ name }}/basedpyright-${{ version }}.tar.gz
+  sha256: e3a9f5b89acc7f23d5a10d95ea6056b2247fcd15b8b248ad44c560c85c39d5e3
+
+build:
+  number: 0
+  noarch: python
+  script: ${{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
+  python:
+    entry_points:
+      - basedpyright = basedpyright.pyright:main
+      - basedpyright-langserver = basedpyright.langserver:main
+
+requirements:
+  host:
+    - python >=3.10
+    - pdm-backend
+    - nodejs >=20.12.2
+    - pip
+  run:
+    - python >=3.10
+    - nodejs >=20.12.2
+
+tests:
+  - python:
+      imports:
+        - basedpyright
+  - requirements:
+      run:
+        - pip
+    script:
+      - pip check
+      - basedpyright --help
+      - basedpyright-langserver --help
+
+about:
+  summary: static type checking for Python (but based)
+  license: MIT
+  license_file:
+    - LICENSE
+
+extra:
+  recipe-maintainers:
+    - iamthebot
+    - moritzwilksch
+
