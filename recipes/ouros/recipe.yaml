@@ -32,7 +32,7 @@ requirements:
     - pip
     - maturin >=1.9.4,<2.0
   run:
-    - python >=3.10
+    - python
 
 tests:
   - python:
