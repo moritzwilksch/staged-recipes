@@ -1,0 +1,58 @@
+context:
+  version: "0.0.4"
+
+package:
+  name: ouros
+  version: ${{ version }}
+
+source:
+  - url: https://pypi.org/packages/source/o/ouros/ouros-${{ version }}.tar.gz
+    sha256: dcf58bdd3b39dcaf4bc1af0b2eb17d1e85ca3e476974f6eb3da198b489f896f8
+  - url: https://raw.githubusercontent.com/parcadei/ouros/v${{ version }}/LICENSE
+    sha256: 73394936b754c00f693a6ac663cef024e8f8c47c8691b348b817812eb210489b
+    file_name: LICENSE
+
+build:
+  number: 0
+  script: python -m pip install . -vv --no-deps --no-build-isolation
+
+requirements:
+  build:
+    - ${{ compiler('c') }}
+    - ${{ stdlib('c') }}
+    - ${{ compiler('rust') }}
+    - cargo-bundle-licenses
+    - if: build_platform != target_platform
+      then:
+        - cross-python_${{ target_platform }}
+        - python
+        - maturin
+  host:
+    - python
+    - pip
+    - maturin >=1.9.4,<2.0
+  run:
+    - python >=3.10
+
+tests:
+  - python:
+      imports:
+        - ouros
+      pip_check: true
+
+about:
+  homepage: https://github.com/parcadei/ouros
+  summary: A sandboxed, snapshotable Python interpreter written in Rust
+  description: |
+    Ouros is a sandboxed Python runtime for AI agents, written in Rust.
+    It executes LLM-generated code safely with sub-microsecond startup times,
+    persistent sessions, execution snapshots, and resource limits — all without
+    filesystem or network access.
+  license: MIT
+  license_file:
+    - LICENSE
+  repository: https://github.com/parcadei/ouros
+
+extra:
+  recipe-maintainers:
+    - moritzwilksch
