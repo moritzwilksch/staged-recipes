@@ -1,0 +1,57 @@
+diff --git a/sdk/python/Cargo.toml b/sdk/python/Cargo.toml
+index 0e4d635..4d12bb7 100644
+--- a/sdk/python/Cargo.toml
++++ b/sdk/python/Cargo.toml
+@@ -14,7 +14,7 @@ crate-type = ["cdylib"]
+ path = "src/lib.rs"
+ 
+ [dependencies]
+-microsandbox = { workspace = true, default-features = true, features = ["ssh"] }
++microsandbox = { workspace = true, default-features = false, features = ["net", "ssh"] }
+ microsandbox-network.workspace = true
+ chrono = { workspace = true }
+ ipnetwork = { version = "0.21.0", features = ["serde"] }
+diff --git a/sdk/python/pyproject.toml b/sdk/python/pyproject.toml
+index 248d708..a175b65 100644
+--- a/sdk/python/pyproject.toml
++++ b/sdk/python/pyproject.toml
+@@ -28,7 +28,6 @@ keywords = ["sandbox", "microvm", "isolation", "security", "vm"]
+ 
+ [project.scripts]
+ microsandbox = "microsandbox._cli:main"
+-msb = "microsandbox._cli:main"
+ 
+ [project.urls]
+ Homepage = "https://github.com/superradcompany/microsandbox"
+diff --git a/sdk/python/microsandbox/_cli.py b/sdk/python/microsandbox/_cli.py
+index 628a989..12ac6d3 100644
+--- a/sdk/python/microsandbox/_cli.py
++++ b/sdk/python/microsandbox/_cli.py
+@@ -19,7 +19,7 @@ from pathlib import Path
+ 
+ def main() -> None:
+     override = os.environ.get("MSB_PATH")
+-    msb = override or str(Path(__file__).parent / "_bundled" / "bin" / "msb")
++    msb = override or os.path.join(os.environ.get("CONDA_PREFIX", sys.prefix), "bin", "msb")
+ 
+     if not os.path.isfile(msb):
+         sys.stderr.write(
+diff --git a/sdk/python/microsandbox/_runtime.py b/sdk/python/microsandbox/_runtime.py
+index 2ca3f81..3d861db 100644
+--- a/sdk/python/microsandbox/_runtime.py
++++ b/sdk/python/microsandbox/_runtime.py
+@@ -18,6 +18,8 @@ wrapping needed.
+ 
+ from __future__ import annotations
+ 
++import os
++import sys
+ from importlib.resources import files
+ from pathlib import Path
+ 
+@@ -27,4 +29,4 @@ _BUNDLED = files("microsandbox._bundled")
+ 
+ def msb_path() -> Path:
+     """Return the absolute path to the bundled ``msb`` binary."""
+-    return Path(str(_BUNDLED.joinpath("bin", "msb")))
++    return Path(os.environ.get("MSB_PATH") or os.path.join(os.environ.get("CONDA_PREFIX", sys.prefix), "bin", "msb"))

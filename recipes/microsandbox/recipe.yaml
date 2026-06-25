@@ -1,0 +1,149 @@
+schema_version: 1
+
+context:
+  version: "0.5.10"
+  python_min: "3.11"
+
+recipe:
+  name: microsandbox-split
+  version: ${{ version }}
+
+source:
+  - url: https://github.com/superradcompany/microsandbox/archive/refs/tags/v${{ version }}.tar.gz
+    sha256: 4a3205e1813bd4b6ff4851a5fa958788409feabb3e13ff4f9e37d6ec5bee735f
+    target_directory: src
+    patches:
+      - use-conda-msb.patch
+  - url: https://people.redhat.com/sgrubb/libcap-ng/libcap-ng-0.8.5.tar.gz
+    sha256: 3ba5294d1cbdfa98afaacfbc00b6af9ed2b83e8a21817185dfd844cc8c7ac6ff
+    target_directory: libcap-ng
+
+build:
+  number: 0
+  skip: not linux
+
+outputs:
+  - package:
+      name: microsandbox
+    build:
+      script:
+        env:
+          CARGO_PROFILE_RELEASE_STRIP: symbols
+        content:
+          - cd libcap-ng
+          - ./configure --prefix=${{ BUILD_PREFIX }} --disable-shared --enable-static
+          - make -j${{ CPU_COUNT }}
+          - make install
+          - cd ../src
+          - export LIBCAPNG_LIB_PATH=${{ BUILD_PREFIX }}/lib
+          - export LIBCAPNG_LINK_TYPE=static
+          - cargo build --release --locked --manifest-path crates/agentd/Cargo.toml --target-dir target
+          - mkdir -p build
+          - cp "$(find target -path '*/release/agentd' -type f | head -n 1)" build/agentd
+          - touch build/agentd
+          - cargo auditable install --locked --no-track --root ${{ PREFIX }} --path crates/cli --no-default-features --features net,ssh
+          - cargo-bundle-licenses --format yaml --output THIRDPARTY.yml
+    requirements:
+      build:
+        - ${{ compiler('c') }}
+        - ${{ compiler('rust') }}
+        - ${{ stdlib('c') }}
+        - cargo-auditable
+        - cargo-bundle-licenses
+        - make
+    tests:
+      - script:
+          - msb --help
+      - package_contents:
+          bin:
+            - msb
+          strict: true
+    about:
+      homepage: https://github.com/superradcompany/microsandbox
+      summary: CLI for secure, fast microVM-based sandboxing
+      description: |
+        Microsandbox provides a CLI for running secure microVM-based
+        sandboxes.
+      license: Apache-2.0
+      license_file:
+        - src/LICENSE
+        - src/THIRDPARTY.yml
+      documentation: https://docs.microsandbox.dev
+      repository: https://github.com/superradcompany/microsandbox
+
+  - package:
+      name: microsandbox-python
+    build:
+      python:
+        version_independent: true
+        entry_points:
+          - microsandbox=microsandbox._cli:main
+      script:
+        env:
+          CARGO_PROFILE_RELEASE_STRIP: symbols
+        content:
+          - cd libcap-ng
+          - ./configure --prefix=${{ BUILD_PREFIX }} --disable-shared --enable-static
+          - make -j${{ CPU_COUNT }}
+          - make install
+          - cd ../src
+          - export LIBCAPNG_LIB_PATH=${{ BUILD_PREFIX }}/lib
+          - export LIBCAPNG_LINK_TYPE=static
+          - cargo build --release --locked --manifest-path crates/agentd/Cargo.toml --target-dir target
+          - mkdir -p build
+          - cp "$(find target -path '*/release/agentd' -type f | head -n 1)" build/agentd
+          - touch build/agentd
+          - cd sdk/python
+          - python -m pip install . -vv --no-deps --no-build-isolation
+          - cd ../..
+          - cargo-bundle-licenses --format yaml --output THIRDPARTY.yml
+    requirements:
+      build:
+        - ${{ compiler('c') }}
+        - ${{ compiler('rust') }}
+        - ${{ stdlib('c') }}
+        - cargo-bundle-licenses
+        - make
+      host:
+        - python ${{ python_min }}.*
+        - python-abi3 ${{ python_min }}.*
+        - pip
+        - maturin
+      run:
+        - python >=${{ python_min }}
+        - microsandbox ${{ version }}.*
+    tests:
+      - python:
+          imports:
+            - microsandbox
+          pip_check: true
+          python_version:
+            - ${{ python_min }}.*
+            - "*"
+      - script:
+          - microsandbox --help
+        requirements:
+          run:
+            - microsandbox ${{ version }}.*
+    about:
+      homepage: https://github.com/superradcompany/microsandbox
+      summary: Python SDK for secure, fast microVM-based sandboxing
+      description: |
+        Python SDK for Microsandbox, using the conda-packaged msb CLI runtime.
+      license: Apache-2.0
+      license_file:
+        - src/LICENSE
+        - src/THIRDPARTY.yml
+      documentation: https://docs.microsandbox.dev
+      repository: https://github.com/superradcompany/microsandbox
+
+about:
+  homepage: https://github.com/superradcompany/microsandbox
+  summary: Secure, fast microVM-based sandboxing
+  license: Apache-2.0
+  license_file: src/LICENSE
+
+extra:
+  feedstock-name: microsandbox
+  recipe-maintainers:
+    - superradcompany
